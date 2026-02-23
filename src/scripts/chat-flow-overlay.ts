@@ -66,7 +66,7 @@ const log = (...args: any[]): void => {
   }).join(' ')}`;
   debugBuffer.push(line);
   if (debugBuffer.length > debugBufferMax) debugBuffer.shift();
-  console.info(DEBUG_PREFIX, ...args);
+  // console.info(DEBUG_PREFIX, ...args);
 };
 
 const settings: FlowSettings = {

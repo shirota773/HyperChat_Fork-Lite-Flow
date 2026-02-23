@@ -67,11 +67,11 @@ const emitFlowBridge = (eventType: string, payload: unknown): void => {
     });
     if (result && 'catch' in (result as Promise<any>)) {
       (result as Promise<any>).catch((error) => {
-        console.debug('[HC Flow] runtime bridge send failed:', error);
+        // console.debug('[HC Flow] runtime bridge send failed:', error);
       });
     }
   } catch (error) {
-    console.debug('[HC Flow] runtime bridge send threw:', error);
+    // console.debug('[HC Flow] runtime bridge send threw:', error);
   }
 };
 
