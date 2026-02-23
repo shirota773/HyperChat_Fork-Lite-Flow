@@ -11,14 +11,25 @@
     location.reload();
   };
 
+  const safeGetUrl = (path: string): string => {
+    try {
+      if (!chrome.runtime?.id) return '';
+      return chrome.runtime.getURL(path);
+    } catch {
+      return '';
+    }
+  };
+
   const isDark = () => document.documentElement.getAttribute('dark') === '';
 
   const openSettings = () => {
-    createPopup(chrome.runtime.getURL(`${isLiveTL ? 'hyperchat/' : ''}options.html${isDark() ? '?dark' : ''}`));
+    const url = safeGetUrl(`${isLiveTL ? 'hyperchat/' : ''}options.html${isDark() ? '?dark' : ''}`);
+    if (!url) return;
+    createPopup(url);
   };
 
-  const logo = chrome.runtime.getURL((isLiveTL ? 'hyperchat' : 'assets') + '/logo-48.png');
-  const simplified = chrome.runtime.getURL((isLiveTL ? 'hyperchat' : 'assets') + '/simplified.png');
+  const logo = safeGetUrl((isLiveTL ? 'hyperchat' : 'assets') + '/logo-48.png');
+  const simplified = safeGetUrl((isLiveTL ? 'hyperchat' : 'assets') + '/simplified.png');
 
   let updated = false;
 

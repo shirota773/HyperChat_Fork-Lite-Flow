@@ -235,9 +235,7 @@
       case 'forceUpdate':
         messageKeys.clear();
         messageActions = [...action.messages].filter(shouldShowMessage);
-        if (action.showWelcome) {
-          messageActions = [...messageActions, welcome];
-        }
+        // Suppress startup welcome banner in this fork.
         break;
     }
   };
@@ -262,7 +260,7 @@
         response.initialData.forEach((action) => {
           onChatAction(action, true);
         });
-        messageActions = [...messageActions, welcome];
+        // Suppress startup welcome banner in this fork.
         $selfChannel = response.selfChannel;
         break;
       case 'themeUpdate':

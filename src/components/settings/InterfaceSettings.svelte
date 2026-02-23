@@ -12,7 +12,13 @@
     isDark,
     enableStickySuperchatBar,
     enableHighlightedMentions,
-    showChatSummary
+    showChatSummary,
+    enableVideoFlowOverlay,
+    flowOverlayMaxVisible,
+    flowOverlayAreaTopPercent,
+    flowOverlayAreaHeightPercent,
+    flowOverlayMaxPerSecond,
+    flowOverlayMaxDelayMs
   } from '../../ts/storage';
   import { themeItems, emojiRenderItems } from '../../ts/chat-constants';
   import Card from '../common/Card.svelte';
@@ -85,5 +91,65 @@
     <Icon class="inline align-middle" small>open_in_new</Icon>
   </a>
   <Checkbox name="Automatically switch to Live Chat" store={autoLiveChat} />
+  <Checkbox name="Enable video comment flow overlay (experimental)" store={enableVideoFlowOverlay} />
+  {#if $enableVideoFlowOverlay}
+    <div class="mt-2 flex flex-col gap-2 text-sm">
+      <label class="flex items-center gap-2">
+        <span class="w-56">Max visible comments:</span>
+        <input
+          class="px-2 py-1 rounded border border-dark-200 dark:border-dark-500 bg-white dark:bg-dark-700 w-24"
+          type="number"
+          min="1"
+          max="80"
+          step="1"
+          bind:value={$flowOverlayMaxVisible}
+        />
+      </label>
+      <label class="flex items-center gap-2">
+        <span class="w-56">Max render per second:</span>
+        <input
+          class="px-2 py-1 rounded border border-dark-200 dark:border-dark-500 bg-white dark:bg-dark-700 w-24"
+          type="number"
+          min="1"
+          max="60"
+          step="1"
+          bind:value={$flowOverlayMaxPerSecond}
+        />
+      </label>
+      <label class="flex items-center gap-2">
+        <span class="w-56">Max delay (ms):</span>
+        <input
+          class="px-2 py-1 rounded border border-dark-200 dark:border-dark-500 bg-white dark:bg-dark-700 w-24"
+          type="number"
+          min="1000"
+          max="60000"
+          step="500"
+          bind:value={$flowOverlayMaxDelayMs}
+        />
+      </label>
+      <label class="flex items-center gap-2">
+        <span class="w-56">Flow area top (%):</span>
+        <input
+          class="px-2 py-1 rounded border border-dark-200 dark:border-dark-500 bg-white dark:bg-dark-700 w-24"
+          type="number"
+          min="0"
+          max="90"
+          step="1"
+          bind:value={$flowOverlayAreaTopPercent}
+        />
+      </label>
+      <label class="flex items-center gap-2">
+        <span class="w-56">Flow area height (%):</span>
+        <input
+          class="px-2 py-1 rounded border border-dark-200 dark:border-dark-500 bg-white dark:bg-dark-700 w-24"
+          type="number"
+          min="10"
+          max="100"
+          step="1"
+          bind:value={$flowOverlayAreaHeightPercent}
+        />
+      </label>
+    </div>
+  {/if}
   <MessageTranslationSettings />
 </Card>

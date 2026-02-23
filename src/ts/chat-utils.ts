@@ -1,14 +1,34 @@
 import type { Chat } from './typings/chat';
 
+const runtimeAvailable = (): boolean => {
+  try {
+    return chrome.runtime?.id != null;
+  } catch {
+    return false;
+  }
+};
+
 export const getFrameInfoAsync = async (): Promise<Chat.UncheckedFrameInfo> => {
-  return await new Promise(
-    (resolve) =>
-      chrome.runtime.sendMessage({ type: 'getFrameInfo' }, resolve)
-  );
+  if (!runtimeAvailable()) {
+    return { tabId: undefined, frameId: undefined };
+  }
+  return await new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage({ type: 'getFrameInfo' }, resolve);
+    } catch (error) {
+      console.debug('[HyperChat] getFrameInfo failed:', error);
+      resolve({ tabId: undefined, frameId: undefined });
+    }
+  });
 };
 
 export const createPopup = (url: string): void => {
-  chrome.runtime.sendMessage({ type: 'createPopup', url });
+  if (!runtimeAvailable()) return;
+  try {
+    chrome.runtime.sendMessage({ type: 'createPopup', url });
+  } catch (error) {
+    console.debug('[HyperChat] createPopup failed:', error);
+  }
 };
 
 export const frameIsReplay = (): boolean => {

@@ -1,7 +1,5 @@
-import HcButton from '../components/HyperchatButton.svelte';
 import { getFrameInfoAsync, isValidFrameInfo, frameIsReplay, checkInjected } from '../ts/chat-utils';
 import { isLiveTL } from '../ts/chat-constants';
-import { hcEnabled, autoLiveChat } from '../ts/storage';
 import {
   initInterceptor,
   processMessageChunk,
@@ -17,18 +15,73 @@ const hcWarning = 'An existing HyperChat button has been detected. This ' +
   'Having multiple instances of the same scripts running WILL cause ' +
   'problems such as chat messages not loading.';
 
-const getScriptURL = (path: string): string => {
-  if (isLiveTL) {
-    return chrome.runtime.getURL('submodules/chat/src/scripts/' + path);
+const runtimeAvailable = (): boolean => {
+  try {
+    return chrome.runtime?.id != null;
+  } catch {
+    return false;
   }
-  return chrome.runtime.getURL('scripts/' + path);
+};
+
+const getScriptURL = (path: string): string => {
+  if (!runtimeAvailable()) return '';
+  if (isLiveTL) {
+    try {
+      return chrome.runtime.getURL('submodules/chat/src/scripts/' + path);
+    } catch {
+      return '';
+    }
+  }
+  try {
+    return chrome.runtime.getURL('scripts/' + path);
+  } catch {
+    return '';
+  }
+};
+
+const getSyncBool = async (key: string, fallback: boolean): Promise<boolean> => {
+  if (!runtimeAvailable()) return fallback;
+  try {
+    const result = await chrome.storage.sync.get(key);
+    const value = result[key];
+    return typeof value === 'boolean' ? value : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const emitFlowBridge = (eventType: string, payload: unknown): void => {
+  if (window.top !== window) {
+    window.top.postMessage({
+      hyperChatFlow: true,
+      type: eventType,
+      payload
+    }, '*');
+  }
+  if (!runtimeAvailable()) return;
+  try {
+    const result = chrome.runtime.sendMessage({
+      type: 'hcFlowBridge',
+      eventType,
+      payload
+    });
+    if (result && 'catch' in (result as Promise<any>)) {
+      (result as Promise<any>).catch((error) => {
+        console.debug('[HC Flow] runtime bridge send failed:', error);
+      });
+    }
+  } catch (error) {
+    console.debug('[HC Flow] runtime bridge send threw:', error);
+  }
 };
 
 const chatLoaded = async (): Promise<void> => {
+  if (!runtimeAvailable()) return;
   if (!isLiveTL && checkInjected(hcWarning)) return;
 
   const metagetter = document.createElement('script');
   metagetter.src = getScriptURL('chat-metagetter.js');
+  if (!metagetter.src) return;
   const ytcfg: any = await new Promise((resolve) => {
     window.addEventListener('fetchMeta', (event) => {
       resolve(JSON.parse((event as any).detail as string));
@@ -40,13 +93,18 @@ const chatLoaded = async (): Promise<void> => {
   // Init and inject interceptor
   initInterceptor('ytc', ytcfg, frameIsReplay());
   window.addEventListener('messageReceive', (d) => {
-    processMessageChunk((d as CustomEvent).detail);
+    const detail = (d as CustomEvent).detail;
+    processMessageChunk(detail);
+    emitFlowBridge('messageReceive', detail);
   });
   window.addEventListener('messageSent', (d) => {
-    processSentMessage((d as CustomEvent).detail);
+    const detail = (d as CustomEvent).detail;
+    processSentMessage(detail);
+    emitFlowBridge('messageSent', detail);
   });
   const script = document.createElement('script');
   script.src = getScriptURL('chat-interceptor.js');
+  if (!script.src) return;
   document.body.appendChild(script);
 
   // Handle initial data
@@ -88,18 +146,7 @@ const chatLoaded = async (): Promise<void> => {
   sendTheme();
 
   document.body.style.minWidth = document.body.style.minHeight = '0px';
-  const hyperChatEnabled = await hcEnabled.get();
-
-  // Inject HC button
-  const ytcPrimaryContent = document.querySelector('#primary-content');
-  if (!ytcPrimaryContent) {
-    console.error('Failed to find #primary-content');
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const hcButton = new HcButton({
-    target: ytcPrimaryContent
-  });
+  const hyperChatEnabled = await getSyncBool('hc.enabled', true);
 
   // Everything past this point will only run if HC is enabled
   if (!hyperChatEnabled) return;
@@ -135,7 +182,7 @@ const chatLoaded = async (): Promise<void> => {
   }
   ytcTicker.remove();
 
-  if (await autoLiveChat.get()) {
+  if (await getSyncBool('hc.autoLiveChat', false)) {
     const live = document.querySelector<HTMLElement>('tp-yt-paper-listbox#menu > :nth-child(2)');
     if (!live) {
       console.error('Failed to find Live Chat menu item');

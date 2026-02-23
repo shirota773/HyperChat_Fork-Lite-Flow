@@ -25,9 +25,32 @@ export function fixLeaks(): boolean {
     //   console.warn('fixSchedulerLeak: window.requestAnimationFrame() is required, but missing');
     //   return false;
     // }
-    const scheduler = window.ytglobal?.schedulerInstanceInstance_;
+    const ytglobal = window.ytglobal;
+    if (!ytglobal) {
+      console.info('fixSchedulerLeak: ytglobal is missing; skipping workaround');
+      return false;
+    }
+
+    const directCandidates = [
+      ytglobal.schedulerInstanceInstance_,
+      ytglobal.schedulerInstance_,
+      ytglobal.schedulerInstance
+    ];
+
+    let scheduler = directCandidates.find(v => v != null);
     if (!scheduler) {
-      console.warn('fixSchedulerLeak: schedulerInstanceInstance_ is missing');
+      const values = Object.values(ytglobal);
+      scheduler = values.find((value) => {
+        if (value == null) return false;
+        const ctor = (value as any).constructor;
+        if (!ctor) return false;
+        const code = String(ctor);
+        return code.includes('useRaf') && code.includes('visibilitychange');
+      });
+    }
+
+    if (!scheduler) {
+      console.info('fixSchedulerLeak: scheduler instance not found; skipping workaround');
       return false;
     }
     // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
@@ -36,7 +59,7 @@ export function fixLeaks(): boolean {
                code.match(/this\.(\w+)\s*=\s*\(\w+\("scheduler_use_raf_by_default"\)/);
     const p2 = code.match(/\("visibilitychange",\s*this\.(\w+)\)/);
     if (!p1 || !p2) {
-      console.warn('fixSchedulerLeak: unknown code');
+      console.info('fixSchedulerLeak: unknown scheduler code; skipping workaround');
       return false;
     }
     const useRafProp = p1[1];

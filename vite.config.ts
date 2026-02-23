@@ -59,7 +59,7 @@ export default defineConfig({
     zipPack({
       inDir: buildDir,
       outDir: 'build',
-      outFileName: `HyperChat-${browser}.zip`
+      outFileName: `HyperChat-Fork-Lite-Flow-${browser}.zip`
     })
   ]
 });

@@ -22,6 +22,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       url: request.url,
       type: 'popup'
     }, () => {});
+  } else if (request.type === 'hcFlowBridge') {
+    const tabId = sender.tab?.id;
+    if (tabId != null) {
+      chrome.tabs.sendMessage(tabId, {
+        type: 'hcFlowBridge',
+        eventType: request.eventType,
+        payload: request.payload
+      }, () => {
+        if (chrome.runtime.lastError) {
+          // Usually means no receiving content script in this tab yet.
+          console.debug('[HC Flow] tabs.sendMessage failed:', chrome.runtime.lastError.message);
+        }
+      });
+    }
   }
 });
 

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "HyperChat [Improved YouTube Chat]",
+  "name": "HyperChat Fork: Lite + Flow",
   "version": "0.0.0",
   "homepage_url": "https://livetl.app/hyperchat",
   "description": "Improved YouTube chat with CPU/RAM optimizations, customization options, and cutting-edge features!",
@@ -12,12 +12,22 @@
     "storage"
   ],
   "host_permissions": [
+    "https://www.youtube.com/watch*",
     "https://www.youtube.com/live_chat*",
     "https://www.youtube.com/live_chat_replay*",
     "https://studio.youtube.com/live_chat*",
     "https://studio.youtube.com/live_chat_replay*"
   ],
   "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/watch*"
+      ],
+      "js": [
+        "scripts/chat-flow-overlay.ts"
+      ],
+      "all_frames": false
+    },
     {
       "matches": [
         "https://www.youtube.com/live_chat*",
